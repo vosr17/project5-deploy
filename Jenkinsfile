@@ -30,6 +30,17 @@ pipeline {
 		}
 
 		
+        stage('Set current kubectl context') {
+			steps {
+				withAWS(region:'us-east-1', credentials:'ecr_credentials') {
+					sh '''
+						kubectl config use-context arn:aws:eks:us-east-1:142977788479:cluster/capstonecluster
+					'''
+				}
+			}
+		}
+
+
 		stage('Deploy blue container') {
 			steps {
 				withAWS(region:'us-east-1', credentials:'ecr_credentials') {
@@ -50,19 +61,11 @@ pipeline {
 			}
 		}
 
-        stage('Set current kubectl context') {
-			steps {
-				withAWS(region:'us-east-1', credentials:'ecr_credentials') {
-					sh '''
-						kubectl config use-context arn:aws:eks:us-east-1:142977788479:cluster/capstonecluster
-					'''
-				}
-			}
-		}
-
 		
-		stage('Create the service in the cluster, redirect to blue') {
+	    stage('Create the service in the cluster, redirect to blue') {
+
 			steps {
+
 				withAWS(region:'us-east-1', credentials:'ecr_credentials') {
 					sh '''
 						kubectl apply -f ./blue-service.json
@@ -72,12 +75,14 @@ pipeline {
 		}
 
 		stage('Wait user approve') {
-            steps {
+            
+			steps {
                 input "Ready to redirect traffic to green?"
             }
         }
 
 		stage('Create the service in the cluster, redirect to green') {
+
 			steps {
 				withAWS(region:'us-east-1', credentials:'ecr_credentials') {
 					sh '''
